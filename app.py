@@ -183,14 +183,13 @@ def main():
 
 def select_mode(key, mode):
     number = -1
-    if 48 <= key <= 57:  # 0 ~ 9
-        number = key - 48
-    if key == 110:  # n
-        mode = 0
-    if key == 107:  # k
+
+    if key == 49: # key 1
         mode = 1
-    if key == 104:  # h
-        mode = 2
+
+    if not 48 <= key <= 57:  # letters
+        number = key
+
     return number, mode
 
 
@@ -278,20 +277,64 @@ def pre_process_point_history(image, point_history):
     return temp_point_history
 
 
-def logging_csv(number, mode, landmark_list, point_history_list):
+letter_index = {
+    'A':0,
+    'B':1,
+    'C':2,
+    'D':3,
+    'E':4,
+    'F':5,
+    'G':6,
+    'H':7,
+    'I':8,
+    'L':9,
+    'M':10,
+    'N':11,
+    'O':12,
+    'P':13,
+    'R':14,
+    'S':15,
+    'T':16,
+    'U':17,
+    'X':18,
+    'Y':19,
+}
+
+def convert_key_to_upper_letter(key) -> str:
+    letter = chr(key)
+    letter = letter.upper()
+
+    return letter
+
+def convert_key_to_letter_index(key) -> int:
+    if key == -1:
+        return None
+    
+    letter = convert_key_to_upper_letter(key)
+    if not letter in letter_index:
+        return None
+
+    return letter_index[letter]
+
+def logging_csv(letter_pressed, mode, landmark_list, point_history_list):
     if mode == 0:
         pass
-    if mode == 1 and (0 <= number <= 9):
+    if mode == 1 and letter_pressed != -1:
         csv_path = 'model/keypoint_classifier/keypoint.csv'
         with open(csv_path, 'a', newline="") as f:
+            letter_index = convert_key_to_letter_index(letter_pressed)
+            if letter_pressed is None:
+                return
+
             writer = csv.writer(f)
-            writer.writerow([number, *landmark_list])
-    if mode == 2 and (0 <= number <= 9):
-        csv_path = 'model/point_history_classifier/point_history.csv'
-        with open(csv_path, 'a', newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow([number, *point_history_list])
-    return
+            writer.writerow([letter_index, *landmark_list])
+
+    # if mode == 2 and (0 <= letter <= 9):
+    #     csv_path = 'model/point_history_classifier/point_history.csv'
+    #     with open(csv_path, 'a', newline="") as f:
+    #         writer = csv.writer(f)
+    #         writer.writerow([letter, *point_history_list])
+    #return
 
 
 def draw_landmarks(image, landmark_point):
@@ -521,7 +564,7 @@ def draw_point_history(image, point_history):
     return image
 
 
-def draw_info(image, fps, mode, number):
+def draw_info(image, fps, mode, key):
     cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
                1.0, (0, 0, 0), 4, cv.LINE_AA)
     cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
@@ -532,8 +575,9 @@ def draw_info(image, fps, mode, number):
         cv.putText(image, "MODE:" + mode_string[mode - 1], (10, 90),
                    cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
                    cv.LINE_AA)
-        if 0 <= number <= 9:
-            cv.putText(image, "NUM:" + str(number), (10, 110),
+        if key != -1:
+            letter = convert_key_to_upper_letter(key)
+            cv.putText(image, "LETTER PRESSED:" + letter, (10, 110),
                        cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
                        cv.LINE_AA)
     return image
